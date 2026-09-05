@@ -1,0 +1,39 @@
+{
+  "patients": [
+    {
+      "name": "Priya Sharma",
+      "day": "Friday",
+      "time": "3:00 PM",
+      "type": "cleaning"
+    },
+    {
+      "name": "Arjun Mehta",
+      "day": "Monday",
+      "time": "10:30 AM",
+      "type": "root canal"
+    },
+    {
+      "name": "Sara Khan",
+      "day": "Wednesday",
+      "time": "1:15 PM",
+      "type": "checkup"
+    },
+    {
+      "name": "Ravi Kapoor",
+      "day": "Tuesday",
+      "time": "4:45 PM",
+      "type": "filling"
+    },
+    {
+      "name": "Meera Iyer",
+      "day": "Thursday",
+      "time": "11:00 AM",
+      "type": "cleaning"
+    }
+  ],
+  "faqs": {
+    "hours": "We are open Monday through Friday, from 9 AM to 5 PM.",
+    "location": "We are located at 123 Main Street, Suite 400.",
+    "insurance": "We accept most major dental insurances including Delta Dental and MetLife."
+  }
+}
