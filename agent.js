@@ -18,8 +18,11 @@ export default defineAgent({
             }),
         });
 
-        // Diagnostic: log every known event with full raw data, so we can see
-        // exactly what LiveKit 1.8.0 actually emits and in what shape.
+        // Shared contract variable — increments every time VAD confirms the
+        // user has started a new speech turn (including future interruptions).
+        let currentTurnId = 0;
+
+        // Diagnostic: log every known event with full raw data.
         const knownEvents = [
             'user_state_changed',
             'agent_state_changed',
@@ -34,10 +37,11 @@ export default defineAgent({
             });
         });
 
-        // Keep our specific handlers too, for readable output alongside the raw log
+        // Turn tracking — increments currentTurnId on every "speaking" transition
         session.on('user_state_changed', (ev) => {
             if (ev.newState === 'speaking') {
-                console.log('🎙️ User started speaking');
+                currentTurnId++;
+                console.log(`🎙️ User started speaking — currentTurnId: ${currentTurnId}`);
             } else if (ev.newState === 'listening') {
                 console.log('🛑 User stopped speaking');
             }
