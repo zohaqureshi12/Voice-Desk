@@ -17,5 +17,11 @@
   "bugs": {
     "url": "https://github.com/zohaqureshi12/Voice-Desk/issues"
   },
-  "homepage": "https://github.com/zohaqureshi12/Voice-Desk#readme"
+  "homepage": "https://github.com/zohaqureshi12/Voice-Desk#readme",
+  "dependencies": {
+    "@livekit/agents": "^1.8.0",
+    "@livekit/agents-plugin-deepgram": "^1.8.0",
+    "dotenv": "^17.4.2",
+    "livekit-server-sdk": "^2.18.0"
+  }
 }
