@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import { cli, defineAgent, WorkerOptions, voice } from '@livekit/agents';
 import * as deepgram from '@livekit/agents-plugin-deepgram';
 import * as silero from '@livekit/agents-plugin-silero';
+import { processTranscript } from './logic.js';
 
 export default defineAgent({
     entry: async (ctx) => {
@@ -18,11 +19,8 @@ export default defineAgent({
             }),
         });
 
-        // Shared contract variable — increments every time VAD confirms the
-        // user has started a new speech turn (including future interruptions).
         let currentTurnId = 0;
 
-        // Diagnostic: log every known event with full raw data.
         const knownEvents = [
             'user_state_changed',
             'agent_state_changed',
@@ -37,7 +35,6 @@ export default defineAgent({
             });
         });
 
-        // Turn tracking — increments currentTurnId on every "speaking" transition
         session.on('user_state_changed', (ev) => {
             if (ev.newState === 'speaking') {
                 currentTurnId++;
@@ -49,6 +46,10 @@ export default defineAgent({
 
         session.on('user_input_transcribed', (ev) => {
             console.log('📝 Transcript:', ev.transcript, '| final:', ev.isFinal);
+
+            if (ev.isFinal) {
+                processTranscript(ev.transcript, currentTurnId);
+            }
         });
 
         await session.start({
