@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { fileURLToPath } from 'url';
 import { cli, defineAgent, WorkerOptions, voice } from '@livekit/agents';
 import * as deepgram from '@livekit/agents-plugin-deepgram';
 import * as silero from '@livekit/agents-plugin-silero';
@@ -17,22 +18,28 @@ export default defineAgent({
             }),
         });
 
-        // Log every time the user starts/stops speaking (VAD events)
-        session.on('user_started_speaking', () => {
-            console.log('🎙️ User started speaking');
+        // VAD-driven state changes (speaking/listening) — this is where currentTurnId will hook in later
+        session.on('user_state_changed', (ev) => {
+            console.log(`🔄 User state changed: ${ev.newState}`);
+            if (ev.newState === 'speaking') {
+                console.log('🎙️ User started speaking');
+            } else if (ev.newState === 'listening') {
+                console.log('🛑 User stopped speaking');
+            }
         });
 
-        session.on('user_stopped_speaking', () => {
-            console.log('🛑 User stopped speaking');
+        // Live transcripts from Deepgram
+        session.on('user_input_transcribed', (ev) => {
+            console.log('📝 Transcript:', ev.transcript, '| final:', ev.isFinal);
         });
 
-        // Log final transcripts as they come in from Deepgram
-        session.on('user_transcript', (text) => {
-            console.log('📝 Transcript:', text);
+        await session.start({
+            room: ctx.room,
+            agent: voice.Agent.create({
+                instructions: 'You are a test agent for Voice-Desk. Do not speak yet — just listen and transcribe.',
+            }),
         });
-
-        await session.start({ room: ctx.room });
     },
 });
 
-cli.runApp(new WorkerOptions({ agent: import.meta.url }));
+cli.runApp(new WorkerOptions({ agent: fileURLToPath(import.meta.url) }));
