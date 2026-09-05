@@ -18,9 +18,24 @@ export default defineAgent({
             }),
         });
 
-        // VAD-driven state changes (speaking/listening) — this is where currentTurnId will hook in later
+        // Diagnostic: log every known event with full raw data, so we can see
+        // exactly what LiveKit 1.8.0 actually emits and in what shape.
+        const knownEvents = [
+            'user_state_changed',
+            'agent_state_changed',
+            'user_input_transcribed',
+            'conversation_item_added',
+            'close',
+        ];
+
+        knownEvents.forEach((eventName) => {
+            session.on(eventName, (ev) => {
+                console.log(`🔔 EVENT [${eventName}]:`, JSON.stringify(ev));
+            });
+        });
+
+        // Keep our specific handlers too, for readable output alongside the raw log
         session.on('user_state_changed', (ev) => {
-            console.log(`🔄 User state changed: ${ev.newState}`);
             if (ev.newState === 'speaking') {
                 console.log('🎙️ User started speaking');
             } else if (ev.newState === 'listening') {
@@ -28,7 +43,6 @@ export default defineAgent({
             }
         });
 
-        // Live transcripts from Deepgram
         session.on('user_input_transcribed', (ev) => {
             console.log('📝 Transcript:', ev.transcript, '| final:', ev.isFinal);
         });
