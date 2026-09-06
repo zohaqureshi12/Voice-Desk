@@ -3,7 +3,12 @@ import { fileURLToPath } from 'url';
 import { cli, defineAgent, WorkerOptions, voice } from '@livekit/agents';
 import * as deepgram from '@livekit/agents-plugin-deepgram';
 import * as silero from '@livekit/agents-plugin-silero';
-import { processTranscript } from './logic.js';
+import { processTranscript, activeResponseController } from './logic.js';
+
+// How long to wait after the last final STT fragment before treating the
+// user's turn as complete. Tune this during testing — too short and you'll
+// cut off natural pauses; too long and the agent feels sluggish to respond.
+const SILENCE_FLUSH_MS = 900;
 
 export default defineAgent({
     entry: async (ctx) => {
@@ -20,15 +25,22 @@ export default defineAgent({
         });
 
         let currentTurnId = 0;
+        let transcriptBuffer = '';
+        let flushTimer = null;
 
-        const knownEvents = [
-            'user_state_changed',
-            'agent_state_changed',
-            'user_input_transcribed',
-            'conversation_item_added',
-            'close',
-        ];
+        function scheduleFlush() {
+            if (flushTimer) clearTimeout(flushTimer);
+            flushTimer = setTimeout(() => {
+                const textToSend = transcriptBuffer.trim();
+                transcriptBuffer = '';
+                if (textToSend) {
+                    console.log(`✅ [Turn ${currentTurnId}] Complete user turn (silence-flush): "${textToSend}"`);
+                    processTranscript(textToSend, currentTurnId, session);
+                }
+            }, SILENCE_FLUSH_MS);
+        }
 
+        const knownEvents = ['user_state_changed', 'agent_state_changed', 'close'];
         knownEvents.forEach((eventName) => {
             session.on(eventName, (ev) => {
                 console.log(`🔔 EVENT [${eventName}]:`, JSON.stringify(ev));
@@ -45,10 +57,10 @@ export default defineAgent({
         });
 
         session.on('user_input_transcribed', (ev) => {
-            console.log('📝 Transcript:', ev.transcript, '| final:', ev.isFinal);
-
-            if (ev.isFinal) {
-                processTranscript(ev.transcript, currentTurnId);
+            if (ev.isFinal && ev.transcript.trim()) {
+                transcriptBuffer = (transcriptBuffer + ' ' + ev.transcript).trim();
+                console.log(`📝 Buffered final segment: "${ev.transcript}" → buffer: "${transcriptBuffer}"`);
+                scheduleFlush();
             }
         });
 
